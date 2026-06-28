@@ -1,0 +1,16 @@
+{
+  "channels": ["C0XXXXXXXXX"],
+  "owner": "",
+  "lookback_days": 14,
+  "weekly_lookback_days": 60,
+  "timezone_offset_hours": 9,
+  "daily_hours": [13, 22],
+  "weekly_day": 0,
+  "weekly_hour": 13,
+  "resolve_reactions": ["white_check_mark", "heavy_check_mark", "ballot_box_with_check"],
+  "snooze_reactions": ["zzz", "alarm_clock", "bookmark"],
+  "resolve_keywords": ["확인", "완료", "done", "끝", "read", "checked"],
+  "snooze_keywords": ["보류", "나중에", "later", "snooze", "pass"],
+  "daily_marker": "Readback reminder",
+  "weekly_marker": "Snoozed readback"
+}

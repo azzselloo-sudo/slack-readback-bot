@@ -1,0 +1,41 @@
+name: readback reminder
+
+# Cron is in UTC. These two examples fire the daily digest at 13:00 and 22:00 KST
+# (KST = UTC+9, so 04:00 and 13:00 UTC). The weekly digest runs Monday 13:00 KST.
+# Adjust the times to your own timezone if needed.
+on:
+  schedule:
+    - cron: "0 4 * * *"    # 13:00 KST, daily digest
+    - cron: "0 13 * * *"   # 22:00 KST, daily digest
+    - cron: "0 4 * * 1"    # 13:00 KST Monday, weekly snoozed digest
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "daily or weekly"
+        default: "daily"
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -r requirements.txt
+
+      # config.json is gitignored, so write it from a repo variable (or commit a public one).
+      - name: Write config
+        run: printf '%s' "$READBACK_CONFIG" > config.json
+        env:
+          READBACK_CONFIG: ${{ vars.READBACK_CONFIG }}
+
+      - name: Run reminder
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        run: |
+          MODE="${{ github.event.inputs.mode }}"
+          if [ "${{ github.event.schedule }}" = "0 4 * * 1" ]; then MODE="weekly"; fi
+          python readback.py "${MODE:-daily}"
