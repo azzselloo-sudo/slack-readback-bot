@@ -45,7 +45,13 @@
 - 상주: `python readback.py loop`
 - 무료 자동: GitHub Actions (레포 Secret `SLACK_BOT_TOKEN` + Variable `READBACK_CONFIG`=config.json 전문)
 
+## 진행 현황 (2026-07-04 기준)
+
+- v1 배포 완료 + **원커맨드 셋업 마법사** 추가(`python readback.py setup`, 위 셋업 참고). 단위테스트 8개 통과, 가짜토큰 실패흐름 검증. push 완료(커밋: TASK_BRIEF · setup 마법사 · 핸드오프 문서).
+- 09-kits 매뉴얼 레지스트리 04번 등록·이력 기록. 메모리 `project_slack_readback_kit` 등록.
+- **공유문구 확정**: Claude Code Study 채널용 build-in-public 초안 준비됨(훅="이 채널에 매일 뜨는 다시볼거 리마인드 그거"). 공개레포라 링크만 주면 됨.
+
 ## 남은 일 (Open)
 
-- 없음(v1 배포 완료). 남에게 핸드오프 시 위 BYO 2개만 안내하면 됨.
+- **사용자 액션**: 확정된 공유문구를 슬랙 채널에 붙여넣기(내 슬랙 발송툴 없음).
 - 선택: 셀로직 봇 쪽 readback 로직이 개선되면 이 배포판에도 반영(현재는 동등).
