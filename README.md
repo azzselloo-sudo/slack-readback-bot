@@ -30,19 +30,22 @@ At [api.slack.com/apps](https://api.slack.com/apps), create an app, add these Bo
 
 Invite the bot to your channel: `/invite @your-bot`
 
-**2. Configure**
+**2. Configure (one command)**
 
 ```bash
-cp .env.example .env                  # paste your SLACK_BOT_TOKEN
-cp config.example.json config.json    # set your channel ID(s) and preferences
+pip install -r requirements.txt
+python readback.py setup              # checks the token, lists your channels, writes .env + config.json
 ```
 
-Find a channel ID in Slack: channel name -> View channel details -> bottom of the popup.
+The wizard verifies your token, shows the channels the bot is in so you just pick a number, and writes both files for you. No hand-editing JSON.
+
+셋업 마법사가 토큰을 확인하고, 봇이 들어간 채널을 목록으로 보여줘서 번호만 고르면 `.env`와 `config.json`을 자동으로 만들어줍니다. JSON 직접 편집 불필요.
+
+Prefer to do it by hand? Copy `.env.example` -> `.env` (paste your `xoxb-` token) and `config.example.json` -> `config.json` (add your channel IDs). Find a channel ID in Slack: channel name -> View channel details -> bottom of the popup.
 
 **3. Run**
 
 ```bash
-pip install -r requirements.txt
 python readback.py daily --dry        # preview, posts nothing
 python readback.py daily              # post the open-items digest
 python readback.py weekly             # post the snoozed-items digest

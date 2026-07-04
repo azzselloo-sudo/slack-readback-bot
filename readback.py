@@ -12,6 +12,7 @@ Status is driven by reactions / replies on the ORIGINAL message:
   - open     : neither -> shown in the daily digest
 
 Run modes:
+  python readback.py setup     # one-time wizard: check the token, pick channels, write .env + config.json
   python readback.py daily     # post the open-items digest now (let cron/Actions pick the time)
   python readback.py weekly    # post the snoozed-items digest (run once a week)
   python readback.py loop      # resident mode: watch the clock and post at configured KST-style slots
@@ -282,10 +283,81 @@ def loop(client, cfg=CFG):
         time.sleep(900)
 
 
+def setup():
+    """One-time wizard: verify the token, pick channels, write .env + config.json.
+
+    Nothing here is posted to Slack. It only reads (auth check + channel list)
+    and writes the two local files the bot needs, so a newcomer never has to
+    hand-edit JSON.
+    """
+    print("slack-readback-bot setup\n")
+
+    # 1) token: reuse env/.env if present, else ask and save it
+    token = os.environ.get("SLACK_BOT_TOKEN")
+    if token:
+        print(f"Using SLACK_BOT_TOKEN already in your env/.env ({token[:10]}...).")
+    else:
+        token = input("Paste your Slack bot token (starts with xoxb-): ").strip()
+    if not token:
+        sys.exit("No token given. Get one at api.slack.com/apps, then rerun `python readback.py setup`.")
+
+    client = WebClient(token=token)
+    try:
+        who = client.auth_test()
+        print(f"Connected as '{who['user']}' in workspace '{who['team']}'.\n")
+    except Exception as e:
+        sys.exit(f"Token check failed: {str(e)[:120]}\nFix the token and rerun `python readback.py setup`.")
+
+    envf = HERE / ".env"
+    if not envf.exists():
+        envf.write_text(f"SLACK_BOT_TOKEN={token}\n", encoding="utf-8")
+        print("Saved .env")
+
+    # 2) channels: list the ones the bot is already in, let them pick or paste IDs
+    chans = []
+    try:
+        resp = client.users_conversations(types="public_channel,private_channel", limit=200)
+        chans = resp.get("channels", [])
+    except Exception:
+        pass
+    chosen = []
+    if chans:
+        print("Channels your bot is in:")
+        for i, c in enumerate(chans, 1):
+            print(f"  {i}. #{c.get('name')}  ({c['id']})")
+        pick = input("Pick number(s), comma-separated (or paste channel IDs): ").strip()
+        for tok in pick.split(","):
+            tok = tok.strip()
+            if tok.isdigit() and 1 <= int(tok) <= len(chans):
+                chosen.append(chans[int(tok) - 1]["id"])
+            elif tok:
+                chosen.append(tok)
+    else:
+        print("Could not list channels. Invite the bot first: /invite @your-bot")
+        chosen = [t.strip() for t in input("Channel ID(s), comma-separated: ").split(",") if t.strip()]
+    if not chosen:
+        sys.exit("No channel chosen. Rerun `python readback.py setup`.")
+
+    # 3) write config.json off the example so all the sensible defaults come along
+    example = HERE / "config.example.json"
+    cfg = json.loads(example.read_text(encoding="utf-8")) if example.exists() else {}
+    cfg["channels"] = chosen
+    owner = input("Remind only ONE person's messages? Paste their user ID (U...), or Enter for everyone: ").strip()
+    cfg["owner"] = owner
+    (HERE / "config.json").write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    print(f"Saved config.json ({len(chosen)} channel(s), owner={'everyone' if not owner else owner}).")
+
+    print("\nAll set. Preview without posting:  python readback.py daily --dry")
+
+
 def main():
     args = sys.argv[1:]
     dry = "--dry" in args
     mode = next((a for a in args if not a.startswith("-")), "daily")
+
+    if mode == "setup":
+        setup()
+        return
 
     token = os.environ.get("SLACK_BOT_TOKEN")
     if not token:
@@ -302,7 +374,7 @@ def main():
         # one-shot: treat the current local hour as the slot so reruns within the hour dedupe
         run_reminder(client, dry=dry, slot_hour=_now_local().tm_hour)
     else:
-        sys.exit(f"unknown mode '{mode}' (use: daily | weekly | loop, optionally --dry)")
+        sys.exit(f"unknown mode '{mode}' (use: setup | daily | weekly | loop, optionally --dry)")
 
 
 if __name__ == "__main__":
