@@ -38,6 +38,8 @@
 1. **슬랙 봇 토큰** (`xoxb-...`): api.slack.com/apps 에서 앱 생성, 스코프 `channels:history`·`channels:read`·`chat:write`·`reactions:read`(비공개 채널이면 `groups:history` 추가), 설치 후 복사. 채널에 `/invite @봇`.
 2. **채널 ID**: config.json 의 `channels` 에 넣기.
 
+셋업(원커맨드): `pip install -r requirements.txt` → `python readback.py setup`. 마법사가 토큰 검증 + 봇이 든 채널 목록에서 번호로 선택 → `.env`·`config.json` 자동 생성(JSON 수동편집 불필요). 손으로 하려면 `.env.example`·`config.example.json` 복사.
+
 구동 3택:
 - 로컬 1회: `python readback.py daily --dry` (미리보기) / `--dry` 빼면 발송
 - 상주: `python readback.py loop`
