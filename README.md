@@ -22,6 +22,9 @@ There is no state file. The bot figures everything out by reading the channel ea
 
 ## Setup · 셋업 (3 steps)
 
+> **Easiest path** : open Claude Code in this folder and say `read this kit folder and help me set it up` — it walks you through the steps below.
+> **제일 쉬운 방법** : 이 폴더에서 클로드코드를 켜고 `이 키트 폴더 보고 셋업 도와줘` 라고 치세요. 아래 3단계를 클로드가 안내·대행합니다.
+
 **1. Create a Slack app and get a bot token**
 
 At [api.slack.com/apps](https://api.slack.com/apps), create an app, add these Bot Token Scopes under OAuth & Permissions, install to your workspace, and copy the `xoxb-...` token:
