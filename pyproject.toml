@@ -1,0 +1,11 @@
+# uv 잠금 설치용. 받은 사람이 같은 버전으로 돌게 하려고 둔다 (2026-08-17).
+#   uv sync        의존성 설치 (uv.lock 그대로)
+#   uv 가 없으면   pip install -r requirements.txt
+[project]
+name = "slack-readback-bot"
+version = "0.1.0"
+requires-python = ">=3.9"
+dependencies = ["slack_sdk>=3.27"]
+
+[tool.uv]
+package = false

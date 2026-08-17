@@ -1,0 +1,30 @@
+# 키트 표준 명세 (2026-08-17). doctor.py 가 이 파일을 읽는다.
+name: slack-readback-bot
+description: 채널에 던져둔 '다시 볼 거'를 미처리 건만 모아 다시 올려주는 무상태 슬랙 봇
+os:
+- windows
+- macos
+- linux
+python: '>=3.9'
+env:
+- key: SLACK_BOT_TOKEN
+  required: true
+  where: https://api.slack.com/apps → OAuth & Permissions → Bot User OAuth Token
+  store: .env
+files:
+- path: .env
+  from: .env.example
+  required: true
+- path: config.json
+  from: config.example.json
+  required: true
+packages:
+- slack_sdk
+commands:
+  setup: 'uv sync  (uv 없으면: pip install -r requirements.txt)'
+  doctor: python doctor.py
+  dry_run: python readback.py --dry-run
+  start: python readback.py
+  uninstall: 슬랙 앱에서 봇 제거 후 폴더 삭제
+human_gate: []
+notes: 상태 파일이 없다. 채널을 읽어 판단하므로 제거 시 남는 게 없다.
