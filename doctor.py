@@ -30,6 +30,19 @@ def _load_yaml(path):
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
+# 설치 이름과 import 이름이 다른 것들. 이걸 모르면 제대로 깔린 키트를 "미설치"라고 말한다.
+_DIST_TO_MODULE = {
+    "pyyaml": "yaml", "python-dotenv": "dotenv", "beautifulsoup4": "bs4",
+    "psycopg2-binary": "psycopg2", "pillow": "PIL", "slack-sdk": "slack_sdk",
+    "google-api-python-client": "googleapiclient", "opencv-python": "cv2",
+}
+
+
+def _module_name(pkg):
+    dist = pkg.split("==")[0].split(">=")[0].split("[")[0].strip().lower()
+    return _DIST_TO_MODULE.get(dist, dist.replace("-", "_"))
+
+
 def _dotenv():
     """.env / .env.local 값을 OS 환경변수보다 우선해서 읽는다(키트는 로컬 파일이 정본)."""
     vals = {}
@@ -42,17 +55,27 @@ def _dotenv():
             if not line or line.startswith("#") or "=" not in line:
                 continue
             k, v = line.split("=", 1)
-            vals[k.strip()] = v.strip().strip("'\"")
+            v = v.strip()
+            # `KEY=값   # 설명` 형태가 .env.example 에 있다. 주석을 값으로 읽으면
+            # 키트의 dotenv 로더와 다른 값을 보고 "정상"이라고 말하게 된다.
+            if not v.startswith(("'", '"')) and " #" in v:
+                v = v.split(" #", 1)[0].strip()
+            vals[k.strip()] = v.strip("'\"")
     return vals
 
 
+# .env.example 을 복사만 하고 값을 안 채운 흔적. 실제 예시값들을 보고 뽑았다
+# (`sk-여기에_본인_키`, `받을_주소@gmail.com`, `your-wp-username`, `xxxx xxxx xxxx xxxx`).
+_PLACEHOLDER_TOKENS = ("여기", "본인", "받을_", "_주소", "your", "xxxx", "changeme",
+                       "here", "example.com", "<", "...")
+
+
 def _placeholder(v):
-    """.env.example 을 그대로 복사만 하고 값을 안 채운 경우를 잡는다."""
     if not v:
         return True
     low = v.lower()
-    return (any(t in v for t in ("여기", "본인", "your", "xxxx", "...", "..."))
-            or low in ("sk-", "changeme"))
+    # 예전엔 소문자로 바꿔놓고 원문과 비교해서 YOUR_API_KEY 같은 대문자 예시가 통과했다
+    return any(tok in low for tok in _PLACEHOLDER_TOKENS) or low in ("sk-",)
 
 
 def check():
@@ -91,7 +114,7 @@ def check():
                         f"복사: cp {src} {f['path']}" if src else f.get("how", "")))
 
     for pkg in spec.get("packages") or []:
-        mod = pkg.split("==")[0].split(">=")[0].replace("-", "_")
+        mod = _module_name(pkg)
         if importlib.util.find_spec(mod) is None:
             out.append((FAIL, f"{pkg} 미설치",
                         f"설치: {(spec.get('commands') or {}).get('setup', 'pip install -r requirements.txt')}"))
@@ -123,5 +146,19 @@ def main():
     return 0
 
 
+def _selftest():
+    """배포되는 파일이라 판정 두 개(예시값·모듈이름)만 최소로 지킨다."""
+    assert _module_name("pyyaml") == "yaml"
+    assert _module_name("psycopg2-binary>=2.9") == "psycopg2"
+    assert _module_name("slack_sdk>=3.27") == "slack_sdk"
+
+    for bad in ("", "sk-여기에_본인_키", "YOUR_API_KEY", "your-wp-username",
+                "받을_주소@gmail.com", "xxxx xxxx xxxx xxxx", "<토큰>"):
+        assert _placeholder(bad), bad
+    for good in ("sk-proj-abc123", "https://blog.looseroutine.me", "realziji"):
+        assert not _placeholder(good), good
+    print("doctor selftest OK")
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(_selftest() if "--selftest" in sys.argv else main())
